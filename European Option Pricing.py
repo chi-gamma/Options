@@ -8,18 +8,15 @@ def bsm(S0,K,T,r,sigma,opType):
     d1 = (np.log(S0/K) + (r + 0.5*sigma**2) * T) / (sigma*np.sqrt(T))
     d2 = d1 - (sigma*np.sqrt(T))
     c = (S0 * norm.cdf(d1)) - (K*np.exp(-r*T)*norm.cdf(d2))
-    p = c - S0 + (K*np.exp(-r*T))
     if opType=='call': return c
-    else: return p
-
+    else: return c - S0 + (K*np.exp(-r*T))
+    
 # Monte-Carlo Simulation
 def MonteCarlo(S0,K,T,r,sigma,opType,N,M): # N is the number of simulations
     dt = T/M # time length of steps
     S = S0 * np.exp( np.sum( (r-0.5*sigma**2)*dt + sigma*np.sqrt(dt)*SN((N, M)),axis=1 ) )
-    c = np.exp(-r*T) * (np.maximum(S-K, 0).mean())
-    p = np.exp(-r*T) * (np.maximum(K-S, 0).mean())
-    if opType=='call': return c
-    else: return p
+    if opType=='call': return np.exp(-r*T) * np.mean(np.maximum(S-K, 0))
+    else: return np.exp(-r*T) * np.mean(np.maximum(K-S, 0))
 
 # Binomial tree simulation
 def binomial(S0,K,T,r,sigma,opType,M):
