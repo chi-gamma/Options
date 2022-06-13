@@ -27,8 +27,8 @@ def MonteCarlo(S0,K,T,r,q,sigma,opType,N,M): # N is the number of simulations
 # Binomial tree simulation
 def binomial(S0,K,T,r,q,sigma,opType,M):
     dt = T/M # time length of steps
-    u = np.exp(sigma*np.sqrt(dt))
-    d = 1/u
+    u = np.exp((r-q)*dt + sigma*np.sqrt(dt))
+    d = np.exp((r-q)*dt - sigma*np.sqrt(dt))
     p = (np.exp((r-q)*dt)-d)/(u-d)
     mu = np.arange((M+1))
     mu = np.resize(mu,(M+1,M+1)) #sets upper triangular matrix of number of up moves
@@ -46,22 +46,23 @@ def binomial(S0,K,T,r,q,sigma,opType,M):
             up = payoff[node, column+1]
             down = payoff[node+1, column+1]
             payoff[node,column] = np.exp(-r*dt) * ((p*up) + ((1-p)*down))
-    if opType=='call': return payoff[0,0][0]
-    else: return payoff[0,0][1]
+    if opType=='call':
+        return payoff[0,0][0]
+    else:
+        return payoff[0,0][1]
 
 
 # common input parameters
 S0 = 103
 K = 101
 r = 0.05
+q = 0.01
 T = 1
 sigma = 0.15
 opType = 'call'
 
-print('\nThe Black-Scholes ' + opType + ' Price is:', bsm(S0,K,T,r,sigma,opType))
+print('\nThe Black-Scholes ' + opType + ' Price is:', bsm(S0,K,T,r,q,sigma,opType))
 print('\n')
-print('The Monte-Carlo ' + opType + ' Price is:', MonteCarlo(S0,K,T,r,sigma,opType,100000,300))
+print('The Monte-Carlo ' + opType + ' Price is:', MonteCarlo(S0,K,T,r,q,sigma,opType,N,M))
 print('\n')
-print('The binomial ' + opType + ' price is:', binomial(S0,K,T,r,sigma,opType,200))
-
-
+print('The binomial ' + opType + ' price is:', binomial(S0,K,T,r,q,sigma,opType,M))
