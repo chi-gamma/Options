@@ -1,29 +1,35 @@
 # import the relevant packages
 from scipy.stats import norm
 import numpy as np
-from numpy.random import standard_normal as SN
 
 # Black-Scholes Model
-def bsm(S0,K,T,r,sigma,opType):
-    d1 = (np.log(S0/K) + (r + 0.5*sigma**2) * T) / (sigma*np.sqrt(T))
+def bsm(S0,K,T,r,q,sigma,opType):
+    d1 = (np.log(S0/K) + (r - q + 0.5*sigma**2) * T) / (sigma*np.sqrt(T))
     d2 = d1 - (sigma*np.sqrt(T))
-    c = (S0 * norm.cdf(d1)) - (K*np.exp(-r*T)*norm.cdf(d2))
-    if opType=='call': return c
-    else: return c - S0 + (K*np.exp(-r*T))
+    c = (S0 * np.exp(-q*T) * norm.cdf(d1)) - (K*np.exp(-r*T)*norm.cdf(d2))
+    if opType=='call':
+        return c
+    else: 
+        p = c - (S0 * np.exp(-q*T)) + (K*np.exp(-r*T)) # put call parity with dividend yield
+        return p
+
     
 # Monte-Carlo Simulation
-def MonteCarlo(S0,K,T,r,sigma,opType,N,M): # N is the number of simulations
+def MonteCarlo(S0,K,T,r,q,sigma,opType,N,M): # N is the number of simulations
     dt = T/M # time length of steps
-    S = S0 * np.exp( np.sum( (r-0.5*sigma**2)*dt + sigma*np.sqrt(dt)*SN((N, M)),axis=1 ) )
-    if opType=='call': return np.exp(-r*T) * np.mean(np.maximum(S-K, 0))
-    else: return np.exp(-r*T) * np.mean(np.maximum(K-S, 0))
+    wiener = np.random.normal(loc=0.0, scale=np.sqrt(dt), size=(N,M))
+    S = S0 * np.exp( np.sum( (r-q-0.5*sigma**2)*dt + sigma*wiener,axis=1 ) )
+    if opType=='call':
+        return np.exp(-r*T) * np.mean(np.maximum(S-K, 0))
+    else:
+        return np.exp(-r*T) * np.mean(np.maximum(K-S, 0))
 
 # Binomial tree simulation
-def binomial(S0,K,T,r,sigma,opType,M):
+def binomial(S0,K,T,r,q,sigma,opType,M):
     dt = T/M # time length of steps
     u = np.exp(sigma*np.sqrt(dt))
     d = 1/u
-    p = (np.exp(r*dt)-d)/(u-d)
+    p = (np.exp((r-q)*dt)-d)/(u-d)
     mu = np.arange((M+1))
     mu = np.resize(mu,(M+1,M+1)) #sets upper triangular matrix of number of up moves
     md = np.transpose(mu) #sets upper triangular matrix of number of down moves
